@@ -1,0 +1,38 @@
+package tech.rutschmann.fingerd
+
+
+import android.graphics.Color
+import android.widget.TextView
+import de.robv.android.xposed.IXposedHookLoadPackage
+import de.robv.android.xposed.IXposedHookZygoteInit
+import de.robv.android.xposed.XC_MethodHook
+import de.robv.android.xposed.XposedBridge
+import de.robv.android.xposed.XposedHelpers.findAndHookMethod
+import de.robv.android.xposed.callbacks.XC_LoadPackage
+
+
+class MyModule : IXposedHookLoadPackage, IXposedHookZygoteInit {
+
+    override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam?) {
+        XposedBridge.log("(InstaEclipse): Zygote initialized.");
+    }
+
+    @Throws(Throwable::class)
+    override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
+        if (!lpparam!!.packageName.equals("com.android.systemui")) return
+
+        findAndHookMethod(
+            "com.android.systemui.statusbar.policy.Clock",
+            lpparam!!.classLoader,
+            "updateClock",
+            object : XC_MethodHook() {
+                @Throws(Throwable::class)
+                override fun afterHookedMethod(param: MethodHookParam) {
+                    val tv = param.thisObject as TextView
+                    val text = tv.text.toString()
+                    tv.text = "$text :)"
+                    tv.setTextColor(Color.RED)
+                }
+            })
+    }
+}
